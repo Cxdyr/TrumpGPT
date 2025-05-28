@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Trump Chat Assistant</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="chat-container">
+  <div class="chat-header">
+    <h1>Trump Chat Assistant</h1>
+    <button class="clear-button" onclick="clearChat()">Clear</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span>Thinking, big time...</span>
+  </div>
+  <div class="chat-input">
+    <textarea class="message-input" id="message-input" placeholder="Type something tremendous..." rows="1"></textarea>
+    <button class="send-button" id="send-button" onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+const messagesDiv = document.getElementById('chat-messages');
+const messageInput = document.getElementById('message-input');
+const sendButton = document.getElementById('send-button');
+const loadingDiv = document.getElementById('loading');
+
+// Auto-resize textarea
+messageInput.addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = `${Math.min(this.scrollHeight, 120)}px`;
+});
+
+// Send message on Enter (but not Shift+Enter)
+messageInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+function addMessage(content, role, isError = false) {
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${isError ? 'error' : role}`;
+  messageDiv.textContent = content;
+  messagesDiv.appendChild(messageDiv);
+  messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: 'smooth' });
+}
+
+async function sendMessage() {
+  const userMessage = messageInput.value.trim();
+  if (!userMessage) return;
+
+  addMessage(userMessage, 'user');
+  messageInput.value = '';
+  messageInput.style.height = 'auto';
+  sendButton.disabled = true;
+  loadingDiv.classList.add('show');
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userMessage, conversationId: 'default' }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to send message');
+    }
+
+    const data = await response.json();
+    addMessage(data.message, 'assistant');
+  } catch (error) {
+    addMessage(`Error: ${error.message}`, 'error', true);
+  } finally {
+    sendButton.disabled = false;
+    loadingDiv.classList.remove('show');
+    messageInput.focus();
+  }
+}
+
+async function clearChat() {
+  try {
+    const response = await fetch('/api/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId: 'default' }),
+    });
+
+    if (!response.ok) throw new Error('Failed to clear chat');
+    messagesDiv.innerHTML = '';
+    addMessage('Chat cleared, folks! Let’s make it great again!', 'system');
+  } catch (error) {
+    addMessage(`Error: ${error.message}`, 'error', true);
+  }
+}
+
+async function loadConversation() {
+  try {
+    const response = await fetch('/api/conversation/');
+    if (!response.ok) throw new Error('Failed to load conversation');
+    const data = await response.json();
+    data.messages.forEach((msg) => {
+      if (msg.role !== 'system') addMessage(msg.content, msg.role);
+    });
+    if (data.messages.length <= 1) {
+      addMessage('Hello, folks! I’m here, ready to answer bigly. What’s on your mind?', 'system');
+    }
+  } catch (error) {
+    addMessage('Hello, folks! I’m here, ready to answer bigly. What’s on your mind?', 'system');
+  }
+}
+
+window.addEventListener('load', () => {
+  loadConversation();
+  messageInput.focus();
+});
+</script>
+</body>
+</html>

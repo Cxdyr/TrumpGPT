@@ -1,0 +1,22 @@
+.env
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Environment variables
+.env
+
+# Build and cache
+.DS_Store
+*.log
+dist/
+build/
+coverage/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

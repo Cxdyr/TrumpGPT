@@ -1,0 +1,17 @@
+{
+  "name": "trump-chat-app",
+  "version": "1.0.0",
+  "description": "A chat app with a Trump-like AI assistant",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "openai": "^4.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "author": "",
+  "license": "MIT"
+}
